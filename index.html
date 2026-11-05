@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>تشغيل بث شاهد المحمي</title>
+  <!-- استدعاء مكتبة Shaka Player -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.3.5/shaka-player.compiled.js"></script>
+</head>
+<body>
+
+  <!-- نافذة الفيديو -->
+  <div data-shaka-player-container style="max-width: 800px">
+    <video data-shaka-player id="video" autoplay style="width: 100%; height: 100%"></video>
+  </div>
+
+  <script>
+    const manifestUri = 'https://cdxaws-ak.akamaized.net/out/v1/5c8f16329bb44f53a8181a7f4b3636d2/226eaf4a243f4bfb9ebb0bec3ac58d43/f93a7f08a52a4bab90cd98ed665b3f52/index.mpd?aws.manifestfilter=audio_language:ar;subtitle_language:en,fr,ar,bn,de,es,id,ja,ml,nl,pl,ru,tr,ct,el,hi,it,ko,ms,no,pt,tl;video_codec:H264;video_framerate:25-25;video_height:144-1080';
+
+    async function initApp() {
+      // التأكد من دعم المتصفح للمكتبة
+      shaka.polyfill.installAll();
+      if (!shaka.Player.isBrowserSupported()) {
+        console.error('المتصفح لا يدعم Shaka Player!');
+        return;
+      }
+
+      const video = document.getElementById('video');
+      const player = new shaka.Player(video);
+
+      // إعدادات مفتاح فك التشفير (ClearKey) المستخرج من أمر N_m3u8DL-RE الخاص بك
+      player.configure({
+        drm: {
+          clearKeys: {
+            // Key ID : Key
+            'fa6176806e8e48d98e97018e96420dfd': '08b2542cff47877df269c547db7388ac'
+          }
+        }
+      });
+
+      // إضافة الـ Headers المطلوبة عبر Network Engine للمكتبة لتجنب الحظر من سيرفرات شاهد
+      player.getNetworkingEngine().registerRequestFilter((type, request) => {
+        request.headers['Origin'] = 'https://shahid.mbc.net';
+        request.headers['Referer'] = 'https://shahid.mbc.net/';
+        request.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:159.0) Gecko/20100101 Firefox/159.0';
+      });
+
+      try {
+        // تحميل الرابط وتشغيل الفيديو
+        await player.load(manifestUri);
+        console.log('تم تحميل الفيديو بنجاح!');
+      } catch (e) {
+        console.error('حدث خطأ أثناء التشغيل:', e);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>
